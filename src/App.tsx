@@ -16,6 +16,7 @@ import { useRag } from "./rag/useRag";
 import { DocsPanel } from "./rag/DocsPanel";
 import { useJournal } from "./journal/useJournal";
 import { JournalView } from "./journal/JournalView";
+import { useTheme } from "./theme/useTheme";
 import "./App.css";
 
 type Mode = "chat" | "journal";
@@ -28,6 +29,7 @@ export default function App(): React.JSX.Element {
   const chat = useChat();
   const rag = useRag();
   const journal = useJournal(rag.indexSource, rag.removeSource, rag.ready);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
     void detectCapability().then((c) => {
@@ -77,11 +79,20 @@ export default function App(): React.JSX.Element {
           >
             Journal
           </button>
-          {!trustOpen && (
-            <button className="trust-open" onClick={() => setTrustOpen(true)}>
-              Trust panel ‹
+          <div className="tabs__right">
+            <button
+              className="icon-btn"
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
             </button>
-          )}
+            {!trustOpen && (
+              <button className="trust-open" onClick={() => setTrustOpen(true)}>
+                Trust panel ‹
+              </button>
+            )}
+          </div>
         </div>
 
         {mode === "chat" ? (

@@ -15,6 +15,7 @@
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.79",
     "idb": "^8.0.3",
+    "pdfjs-dist": "^6.1.200",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
@@ -28,6 +29,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@webgpu/types": "^0.1.52",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }

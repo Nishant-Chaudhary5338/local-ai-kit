@@ -9,6 +9,7 @@ import {
   search,
   type Chunk,
 } from "./vectorStore";
+import { readFileText } from "./readFile";
 import { EMBED_MODEL_ID } from "../lib";
 
 export type EmbedderStatus = "idle" | "loading" | "ready" | "error";
@@ -76,7 +77,7 @@ export function useRag() {
 
   const addDocument = useCallback(
     async (file: File): Promise<void> => {
-      await indexSource(file.name, await file.text());
+      await indexSource(file.name, await readFileText(file));
     },
     [indexSource],
   );

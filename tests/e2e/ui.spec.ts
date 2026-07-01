@@ -98,6 +98,23 @@ test("switches to the journal and creates an entry", async ({ page }) => {
   );
 });
 
+test("toggles the color theme and persists it", async ({ page }) => {
+  const before = await page.evaluate(
+    () => document.documentElement.style.colorScheme,
+  );
+  await page.getByRole("button", { name: "Toggle theme" }).click();
+  const after = await page.evaluate(
+    () => document.documentElement.style.colorScheme,
+  );
+  expect(after).not.toBe(before);
+  expect(["light", "dark"]).toContain(after);
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.style.colorScheme))
+    .toBe(after);
+});
+
 test("loads without console errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (msg) => {

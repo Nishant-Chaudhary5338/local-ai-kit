@@ -39,7 +39,7 @@ export function DocsPanel({
           <input
             ref={fileRef}
             type="file"
-            accept=".txt,.md,.markdown"
+            accept=".txt,.md,.markdown,.pdf"
             hidden
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -52,7 +52,7 @@ export function DocsPanel({
             onClick={() => fileRef.current?.click()}
             disabled={indexing}
           >
-            {indexing ? "Indexing…" : "+ Add document (.txt, .md)"}
+            {indexing ? "Indexing…" : "+ Add document (.txt, .md, .pdf)"}
           </button>
         </>
       )}

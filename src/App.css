@@ -183,8 +183,21 @@
   border-bottom-color: #15803d;
 }
 
-.tabs .trust-open {
+.tabs__right {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.icon-btn {
+  font: inherit;
+  cursor: pointer;
+  background: none;
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  line-height: 1;
 }
 
 /* Journal */
