@@ -1,0 +1,114 @@
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.tag {
+  margin: 0.15rem 0 0.5rem;
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid;
+}
+
+.badge--available {
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.badge--unavailable {
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.badge--checking {
+  opacity: 0.6;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+select,
+button,
+textarea {
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+  background: Canvas;
+  color: CanvasText;
+}
+
+button {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+select {
+  flex: 1;
+}
+
+textarea {
+  flex: 1;
+  resize: vertical;
+}
+
+.progress {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.panel--warn {
+  background: color-mix(in srgb, #f59e0b 12%, Canvas);
+  border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+}
+
+.output {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, CanvasText 12%, transparent);
+  background: color-mix(in srgb, CanvasText 3%, Canvas);
+}
+
+.output p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.stats {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
