@@ -89,7 +89,7 @@ export function useChat() {
   }, []);
 
   const send = useCallback(
-    async (text: string): Promise<void> => {
+    async (text: string, context?: string | null): Promise<void> => {
       const client = clientRef.current;
       const trimmed = text.trim();
       if (!client?.ready || !activeId || !trimmed || generating) return;
@@ -110,9 +110,16 @@ export function useChat() {
       setGenerating(true);
       setStats(null);
 
+      const apiMessages = history.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       try {
         const chunks = await client.chat.completions.create({
-          messages: history.map((m) => ({ role: m.role, content: m.content })),
+          messages: context
+            ? [{ role: "system" as const, content: context }, ...apiMessages]
+            : apiMessages,
           stream: true,
           stream_options: { include_usage: true },
         });

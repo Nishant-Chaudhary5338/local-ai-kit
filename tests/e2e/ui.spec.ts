@@ -77,6 +77,16 @@ test("collapses and reopens the trust panel", async ({ page }) => {
   await expect(page.locator(".trust")).toBeVisible();
 });
 
+test("offers document search (RAG) in the sidebar", async ({ page }) => {
+  const docs = page.locator(".docs");
+  await expect(docs).toBeVisible();
+  await expect(docs.getByText("Documents · private")).toBeVisible();
+  // Before the embedder loads, the enable affordance is shown (not a file input).
+  await expect(
+    page.getByRole("button", { name: /Enable document search/ }),
+  ).toBeVisible();
+});
+
 test("loads without console errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (msg) => {

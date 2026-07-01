@@ -12,6 +12,8 @@ import { ModelBar } from "./chat/ModelBar";
 import { MessageList } from "./chat/MessageList";
 import { Composer } from "./chat/Composer";
 import { TrustPanel } from "./trust/TrustPanel";
+import { useRag } from "./rag/useRag";
+import { DocsPanel } from "./rag/DocsPanel";
 import "./App.css";
 
 export default function App(): React.JSX.Element {
@@ -19,6 +21,7 @@ export default function App(): React.JSX.Element {
   const [modelId, setModelId] = useState<string>(defaultModelId(1));
   const [trustOpen, setTrustOpen] = useState(true);
   const chat = useChat();
+  const rag = useRag();
 
   useEffect(() => {
     void detectCapability().then((c) => {
@@ -42,7 +45,17 @@ export default function App(): React.JSX.Element {
         onSelect={chat.selectChat}
         onNew={() => void chat.newChat()}
         onRemove={(id) => void chat.removeChat(id)}
-      />
+      >
+        <DocsPanel
+          status={rag.status}
+          progress={rag.progress}
+          indexing={rag.indexing}
+          sources={rag.sources}
+          onEnable={() => void rag.loadEmbedder()}
+          onAddDoc={(file) => void rag.addDocument(file)}
+          onRemoveDoc={(source) => void rag.removeSource(source)}
+        />
+      </Sidebar>
 
       <section className="main">
         <ModelBar
@@ -68,10 +81,21 @@ export default function App(): React.JSX.Element {
         />
 
         <div className="composer-wrap">
+          {rag.ready && rag.sources.length > 0 && (
+            <p className="rag-hint">
+              📄 Answering from {rag.sources.length} document
+              {rag.sources.length > 1 ? "s" : ""} · cited, on-device
+            </p>
+          )}
           <Composer
             disabled={!modelReady || chat.generating}
             generating={chat.generating}
-            onSend={(text) => void chat.send(text)}
+            onSend={(text) =>
+              void (async () => {
+                const context = await rag.retrieve(text);
+                await chat.send(text, context);
+              })()
+            }
           />
           {chat.stats && (
             <p className="stats">

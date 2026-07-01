@@ -35,6 +35,9 @@ export function defaultModelId(tier: Tier): string {
   return TIER_DEFAULTS[tier];
 }
 
+// Small embedding model for local RAG (~239MB), loaded alongside the chat model.
+export const EMBED_MODEL_ID = "snowflake-arctic-embed-s-q0f32-MLC-b4";
+
 export function resolveModelId(id: string, shaderF16: boolean): string {
   if (shaderF16) return id;
   return CATALOG.find((m) => m.id === id)?.fallbackId ?? id;

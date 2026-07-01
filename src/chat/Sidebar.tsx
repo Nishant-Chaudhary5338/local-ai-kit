@@ -6,6 +6,7 @@ type Props = {
   onSelect: (id: string) => void;
   onNew: () => void;
   onRemove: (id: string) => void;
+  children?: React.ReactNode;
 };
 
 export function Sidebar({
@@ -14,6 +15,7 @@ export function Sidebar({
   onSelect,
   onNew,
   onRemove,
+  children,
 }: Props): React.JSX.Element {
   return (
     <aside className="sidebar">
@@ -42,6 +44,7 @@ export function Sidebar({
           </div>
         ))}
       </nav>
+      {children}
       <p className="sidebar__foot">🔒 Nothing leaves your device</p>
     </aside>
   );

@@ -12,5 +12,6 @@ export {
   defaultModelId,
   resolveModelId,
   loadLiveCatalog,
+  EMBED_MODEL_ID,
   type CatalogModel,
 } from "./catalog";
