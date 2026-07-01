@@ -57,6 +57,26 @@ test("creates a new conversation", async ({ page }) => {
   await expect(items).toHaveCount(before + 1);
 });
 
+test("shows the trust panel with capability and network sections", async ({
+  page,
+}) => {
+  const trust = page.locator(".trust");
+  await expect(trust).toBeVisible();
+  await expect(trust.getByRole("heading", { name: "Capability" })).toBeVisible();
+  await expect(trust.getByRole("heading", { name: "Network" })).toBeVisible();
+  // Nothing outbound should be flagged non-model before any model load.
+  await expect(trust.locator(".trust__row", { hasText: "Non-model" })).toContainText(
+    "0",
+  );
+});
+
+test("collapses and reopens the trust panel", async ({ page }) => {
+  await page.locator(".trust__close").click();
+  await expect(page.locator(".trust")).toHaveCount(0);
+  await page.getByRole("button", { name: /Trust panel/ }).click();
+  await expect(page.locator(".trust")).toBeVisible();
+});
+
 test("loads without console errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (msg) => {

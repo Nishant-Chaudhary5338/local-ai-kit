@@ -11,11 +11,13 @@ import { Sidebar } from "./chat/Sidebar";
 import { ModelBar } from "./chat/ModelBar";
 import { MessageList } from "./chat/MessageList";
 import { Composer } from "./chat/Composer";
+import { TrustPanel } from "./trust/TrustPanel";
 import "./App.css";
 
 export default function App(): React.JSX.Element {
   const [cap, setCap] = useState<Capability | null>(null);
   const [modelId, setModelId] = useState<string>(defaultModelId(1));
+  const [trustOpen, setTrustOpen] = useState(true);
   const chat = useChat();
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function App(): React.JSX.Element {
   const modelReady = chat.model.status === "ready";
 
   return (
-    <div className="layout">
+    <div className={`layout ${trustOpen ? "layout--trust" : ""}`}>
       <Sidebar
         conversations={chat.conversations}
         activeId={chat.activeId}
@@ -54,6 +56,12 @@ export default function App(): React.JSX.Element {
           }
         />
 
+        {!trustOpen && (
+          <button className="trust-open" onClick={() => setTrustOpen(true)}>
+            Trust panel ‹
+          </button>
+        )}
+
         <MessageList
           messages={chat.active?.messages ?? []}
           modelReady={modelReady}
@@ -73,6 +81,16 @@ export default function App(): React.JSX.Element {
           )}
         </div>
       </section>
+
+      {trustOpen && (
+        <TrustPanel
+          cap={cap}
+          modelStatus={chat.model.status}
+          generating={chat.generating}
+          stats={chat.stats}
+          onClose={() => setTrustOpen(false)}
+        />
+      )}
     </div>
   );
 }
