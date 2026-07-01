@@ -9,9 +9,9 @@ test.beforeEach(async ({ page }) => {
   await page.waitForLoadState("networkidle");
 });
 
-test("renders the header and tagline", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: "local-ai-kit" })).toBeVisible();
-  await expect(page.getByText("100% in-browser inference")).toBeVisible();
+test("renders the app shell and privacy footer", async ({ page }) => {
+  await expect(page.getByText("local-ai-kit").first()).toBeVisible();
+  await expect(page.getByText("Nothing leaves your device")).toBeVisible();
 });
 
 test("resolves the WebGPU capability badge (never stuck on checking)", async ({
@@ -45,8 +45,16 @@ test("lists the model catalog across tiers in the picker", async ({ page }) => {
   );
 });
 
-test("keeps Send disabled until a model is ready", async ({ page }) => {
+test("keeps the composer disabled until a model is ready", async ({ page }) => {
+  await expect(page.locator(".composer textarea")).toBeDisabled();
   await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
+});
+
+test("creates a new conversation", async ({ page }) => {
+  const items = page.locator(".conv");
+  const before = await items.count();
+  await page.getByRole("button", { name: "+ New" }).click();
+  await expect(items).toHaveCount(before + 1);
 });
 
 test("loads without console errors", async ({ page }) => {

@@ -14,8 +14,11 @@
   },
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.79",
+    "idb": "^8.0.3",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

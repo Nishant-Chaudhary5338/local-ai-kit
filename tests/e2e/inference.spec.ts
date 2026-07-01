@@ -29,10 +29,14 @@ test("streams a real reply and reports tokens/sec on a WebGPU browser", async ({
     timeout: 240_000,
   });
 
-  await page.locator("textarea").fill("Say hello in exactly three words.");
+  await page
+    .locator(".composer textarea")
+    .fill("Say hello in exactly three words.");
   await page.getByRole("button", { name: "Send" }).click();
 
-  await expect(page.locator(".output p")).not.toBeEmpty({ timeout: 60_000 });
+  await expect(page.locator(".msg--assistant .msg__body").last()).not.toBeEmpty({
+    timeout: 60_000,
+  });
 
   const stats = page.locator(".stats");
   await expect(stats).toContainText(/decode .* tok\/s/, { timeout: 60_000 });
