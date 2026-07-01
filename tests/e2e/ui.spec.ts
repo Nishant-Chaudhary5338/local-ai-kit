@@ -36,15 +36,13 @@ test("shows the fallback panel and disables Load when WebGPU is unavailable", as
   await expect(page.getByRole("button", { name: "Load model" })).toBeDisabled();
 });
 
-test("lists all spike models in the picker", async ({ page }) => {
+test("lists the model catalog across tiers in the picker", async ({ page }) => {
   const options = page.locator("select option");
-  await expect(options).toHaveCount(4);
-  await expect(options).toContainText([
-    "Qwen2.5 0.5B",
-    "Llama 3.2 1B",
-    "Llama 3.2 3B",
-    "Phi-3.5 mini (1k)",
-  ]);
+  await expect(options).toHaveCount(7);
+  await expect(options.filter({ hasText: "Llama 3.2 3B" })).toHaveCount(1);
+  await expect(options.filter({ hasText: "Llama 3.1 8B" })).toContainText(
+    "large",
+  );
 });
 
 test("keeps Send disabled until a model is ready", async ({ page }) => {

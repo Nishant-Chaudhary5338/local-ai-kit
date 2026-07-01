@@ -1,9 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import {
-  CreateWebWorkerMLCEngine,
-  type MLCEngineInterface,
-  type InitProgressReport,
-} from "@mlc-ai/web-llm";
+import { LocalAI } from "./lib";
 
 // Perf stats WebLLM reports in the final streamed usage chunk (usage.extra).
 export type GenStats = {
@@ -14,6 +10,7 @@ export type GenStats = {
 type EngineState = {
   status: "idle" | "loading" | "ready" | "generating" | "error";
   progress: string;
+  progressPct: number;
   output: string;
   stats: GenStats | null;
   error: string | null;
@@ -22,42 +19,41 @@ type EngineState = {
 const INITIAL: EngineState = {
   status: "idle",
   progress: "",
+  progressPct: 0,
   output: "",
   stats: null,
   error: null,
 };
 
 export function useLocalEngine() {
-  const engineRef = useRef<MLCEngineInterface | null>(null);
+  const clientRef = useRef<LocalAI | null>(null);
   const [state, setState] = useState<EngineState>(INITIAL);
 
   const load = useCallback(async (modelId: string): Promise<void> => {
     setState({ ...INITIAL, status: "loading", progress: "Starting…" });
     try {
-      const worker = new Worker(new URL("./worker.ts", import.meta.url), {
-        type: "module",
-      });
-      const engine = await CreateWebWorkerMLCEngine(worker, modelId, {
-        initProgressCallback: (r: InitProgressReport) =>
-          setState((s) => ({ ...s, progress: r.text })),
-      });
-      engineRef.current = engine;
-      setState((s) => ({ ...s, status: "ready", progress: "Model ready." }));
-    } catch (err) {
+      const client = new LocalAI();
+      await client.load(modelId, ({ text, progress }) =>
+        setState((s) => ({ ...s, progress: text, progressPct: progress })),
+      );
+      clientRef.current = client;
       setState((s) => ({
         ...s,
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
+        status: "ready",
+        progress: "Model ready.",
+        progressPct: 1,
       }));
+    } catch (err) {
+      setState((s) => ({ ...s, status: "error", error: toMessage(err) }));
     }
   }, []);
 
   const generate = useCallback(async (prompt: string): Promise<void> => {
-    const engine = engineRef.current;
-    if (!engine) return;
+    const client = clientRef.current;
+    if (!client?.ready) return;
     setState((s) => ({ ...s, status: "generating", output: "", stats: null }));
     try {
-      const chunks = await engine.chat.completions.create({
+      const chunks = await client.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         stream: true,
         stream_options: { include_usage: true },
@@ -77,13 +73,13 @@ export function useLocalEngine() {
       }
       setState((s) => ({ ...s, status: "ready" }));
     } catch (err) {
-      setState((s) => ({
-        ...s,
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
-      }));
+      setState((s) => ({ ...s, status: "error", error: toMessage(err) }));
     }
   }, []);
 
   return { state, load, generate };
+}
+
+function toMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
