@@ -41,33 +41,45 @@ export function useRag() {
     }
   }, []);
 
-  const addDocument = useCallback(async (file: File): Promise<void> => {
-    const embedder = embedderRef.current;
-    if (!embedder?.ready) return;
-    setIndexing(true);
-    try {
-      const text = await file.text();
-      const pieces = chunkText(text);
-      const chunks: Chunk[] = [];
-      for (let i = 0; i < pieces.length; i += BATCH) {
-        const slice = pieces.slice(i, i + BATCH);
-        const vecs = await embedder.embed(slice);
-        slice.forEach((t, j) =>
-          chunks.push({
-            id: crypto.randomUUID(),
-            source: file.name,
-            text: t,
-            embedding: vecs[j],
-            createdAt: Date.now(),
-          }),
-        );
+  // Embed arbitrary text under a source key, replacing any prior chunks for it
+  // (idempotent re-index). Shared by document upload and journal entries.
+  const indexSource = useCallback(
+    async (source: string, text: string): Promise<void> => {
+      const embedder = embedderRef.current;
+      if (!embedder?.ready) return;
+      setIndexing(true);
+      try {
+        await deleteBySource(source);
+        const pieces = chunkText(text);
+        const chunks: Chunk[] = [];
+        for (let i = 0; i < pieces.length; i += BATCH) {
+          const slice = pieces.slice(i, i + BATCH);
+          const vecs = await embedder.embed(slice);
+          slice.forEach((t, j) =>
+            chunks.push({
+              id: crypto.randomUUID(),
+              source,
+              text: t,
+              embedding: vecs[j],
+              createdAt: Date.now(),
+            }),
+          );
+        }
+        if (chunks.length > 0) await addChunks(chunks);
+        setSources(await listSources());
+      } finally {
+        setIndexing(false);
       }
-      await addChunks(chunks);
-      setSources(await listSources());
-    } finally {
-      setIndexing(false);
-    }
-  }, []);
+    },
+    [],
+  );
+
+  const addDocument = useCallback(
+    async (file: File): Promise<void> => {
+      await indexSource(file.name, await file.text());
+    },
+    [indexSource],
+  );
 
   const removeSource = useCallback(async (source: string): Promise<void> => {
     await deleteBySource(source);
@@ -91,9 +103,11 @@ export function useRag() {
     progress,
     indexing,
     sources,
+    docSources: sources.filter((s) => !s.source.startsWith("journal/")),
     ready: status === "ready",
     loadEmbedder,
     addDocument,
+    indexSource,
     removeSource,
     retrieve,
   };

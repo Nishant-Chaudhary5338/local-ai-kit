@@ -87,6 +87,17 @@ test("offers document search (RAG) in the sidebar", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("switches to the journal and creates an entry", async ({ page }) => {
+  await page.getByRole("button", { name: "Journal", exact: true }).click();
+  await expect(page.locator(".journal")).toBeVisible();
+  await page.getByRole("button", { name: "+ New entry" }).click();
+  await expect(page.locator(".journal__title")).toBeVisible();
+  await page.locator(".journal__title").fill("My first entry");
+  await expect(page.locator(".journal__tab--active")).toContainText(
+    "My first entry",
+  );
+});
+
 test("loads without console errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (msg) => {
