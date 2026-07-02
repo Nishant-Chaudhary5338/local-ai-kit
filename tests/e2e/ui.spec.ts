@@ -82,7 +82,7 @@ test("offers document search (RAG) in the sidebar", async ({ page }) => {
 });
 
 test("switches to the journal and creates an entry", async ({ page }) => {
-  await page.getByRole("button", { name: "Journal", exact: true }).click();
+  await page.getByRole("button", { name: "journal", exact: true }).click();
   await expect(page.getByTestId("journal-view")).toBeVisible();
   await page.getByRole("button", { name: "+ New entry" }).click();
   await page.getByPlaceholder("Title").fill("My first entry");
@@ -109,6 +109,25 @@ test("exposes data ownership controls in the trust panel", async ({ page }) => {
   await expect(trust.getByRole("heading", { name: "Your data" })).toBeVisible();
   await expect(trust.getByRole("button", { name: "Export" })).toBeVisible();
   await expect(trust.getByRole("button", { name: "Wipe all" })).toBeVisible();
+});
+
+test("opens the benchmark view", async ({ page }) => {
+  await page.getByRole("button", { name: "benchmark", exact: true }).click();
+  await expect(page.getByTestId("benchmark-view")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "On-device benchmark" }),
+  ).toBeVisible();
+});
+
+test("command palette opens with the keyboard and closes on Escape", async ({
+  page,
+}) => {
+  await page.keyboard.press("ControlOrMeta+k");
+  const input = page.getByPlaceholder("Type a command…");
+  await expect(input).toBeVisible();
+  await input.fill("journal");
+  await input.press("Enter");
+  await expect(page.getByTestId("journal-view")).toBeVisible();
 });
 
 test("loads without console errors", async ({ page }) => {

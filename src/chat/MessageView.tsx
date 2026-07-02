@@ -2,6 +2,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib";
+import { splitThinking } from "./thinking";
 import type { Message } from "./types";
 
 type Props = { message: Message };
@@ -12,6 +13,9 @@ const bubbleProse =
 export function MessageView({ message }: Props): React.JSX.Element {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
+  const { thinking, answer } = isUser
+    ? { thinking: null, answer: message.content }
+    : splitThinking(message.content);
 
   const copy = (): void => {
     void navigator.clipboard.writeText(message.content);
@@ -43,6 +47,15 @@ export function MessageView({ message }: Props): React.JSX.Element {
         )}
       </div>
 
+      {thinking && (
+        <details className="mb-1.5 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-[0.82rem] text-muted">
+          <summary className="cursor-pointer select-none text-faint">
+            {answer ? "Thought process" : "Thinking…"}
+          </summary>
+          <div className="mt-1.5 whitespace-pre-wrap">{thinking}</div>
+        </details>
+      )}
+
       <div
         data-testid={isUser ? "msg-user" : "msg-assistant"}
         className={cn(
@@ -53,10 +66,17 @@ export function MessageView({ message }: Props): React.JSX.Element {
             : "border border-hairline bg-surface shadow-sm",
         )}
       >
-        {message.content ? (
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {message.content}
-          </ReactMarkdown>
+        {message.image && (
+          <img
+            src={message.image}
+            alt="attachment"
+            className="mb-2 max-h-48 rounded-lg"
+          />
+        )}
+        {answer ? (
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+        ) : thinking ? (
+          <span className="text-faint">Reasoning…</span>
         ) : (
           <span className="animate-blink text-accent">▍</span>
         )}

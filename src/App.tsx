@@ -17,18 +17,23 @@ import { useRag } from "./rag/useRag";
 import { DocsPanel } from "./rag/DocsPanel";
 import { useJournal } from "./journal/useJournal";
 import { JournalView } from "./journal/JournalView";
+import { BenchmarkView } from "./chat/BenchmarkView";
+import { CommandPalette, type Command } from "./ui/CommandPalette";
 import { useTheme } from "./theme/useTheme";
+import type { BenchResult } from "./chat/useChat";
 
-type Mode = "chat" | "journal";
+type Mode = "chat" | "journal" | "benchmark";
 
-const TAB_BASE =
-  "cursor-pointer border-b-2 px-3.5 pb-2.5 pt-2 transition";
+const TAB_BASE = "cursor-pointer border-b-2 px-3.5 pb-2.5 pt-2 transition";
+const MODES: Mode[] = ["chat", "journal", "benchmark"];
 
 export default function App(): React.JSX.Element {
   const [cap, setCap] = useState<Capability | null>(null);
   const [modelId, setModelId] = useState<string>(defaultModelId(1));
   const [trustOpen, setTrustOpen] = useState(true);
   const [mode, setMode] = useState<Mode>("chat");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [benchResults, setBenchResults] = useState<BenchResult[]>([]);
   const chat = useChat();
   const rag = useRag();
   const journal = useJournal(rag.indexSource, rag.removeSource, rag.ready);
@@ -48,6 +53,40 @@ export default function App(): React.JSX.Element {
 
   const modelReady = chat.model.status === "ready";
   const hasMessages = (chat.active?.messages.length ?? 0) > 0;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const runBenchmark = async (): Promise<void> => {
+    const result = await chat.benchmark();
+    if (result) setBenchResults((rs) => [result, ...rs]);
+  };
+
+  const commands: Command[] = [
+    { id: "new", label: "New chat", run: () => void chat.newChat() },
+    { id: "chat", label: "Go to Chat", run: () => setMode("chat") },
+    { id: "journal", label: "Go to Journal", run: () => setMode("journal") },
+    { id: "benchmark", label: "Go to Benchmark", run: () => setMode("benchmark") },
+    {
+      id: "theme",
+      label: "Toggle theme",
+      hint: theme,
+      run: toggleTheme,
+    },
+    {
+      id: "trust",
+      label: trustOpen ? "Hide trust panel" : "Show trust panel",
+      run: () => setTrustOpen((o) => !o),
+    },
+  ];
 
   return (
     <div
@@ -76,28 +115,21 @@ export default function App(): React.JSX.Element {
 
       <section className="flex min-h-0 flex-col">
         <div className="flex items-center gap-1 border-b border-hairline bg-surface/60 px-4 pt-1.5 backdrop-blur">
-          <button
-            className={cn(
-              TAB_BASE,
-              mode === "chat"
-                ? "border-accent font-semibold text-fg"
-                : "border-transparent text-muted hover:text-fg",
-            )}
-            onClick={() => setMode("chat")}
-          >
-            Chat
-          </button>
-          <button
-            className={cn(
-              TAB_BASE,
-              mode === "journal"
-                ? "border-accent font-semibold text-fg"
-                : "border-transparent text-muted hover:text-fg",
-            )}
-            onClick={() => setMode("journal")}
-          >
-            Journal
-          </button>
+          {MODES.map((m) => (
+            <button
+              key={m}
+              className={cn(
+                TAB_BASE,
+                "capitalize",
+                mode === m
+                  ? "border-accent font-semibold text-fg"
+                  : "border-transparent text-muted hover:text-fg",
+              )}
+              onClick={() => setMode(m)}
+            >
+              {m}
+            </button>
+          ))}
           <div className="ml-auto flex items-center gap-1.5 pb-1.5">
             <button
               aria-label="Toggle theme"
@@ -117,7 +149,7 @@ export default function App(): React.JSX.Element {
           </div>
         </div>
 
-        {mode === "chat" ? (
+        {mode === "chat" && (
           <>
             <ModelBar
               cap={cap}
@@ -157,11 +189,12 @@ export default function App(): React.JSX.Element {
               <Composer
                 disabled={!modelReady || chat.generating}
                 generating={chat.generating}
+                allowImage={chat.modelCapability === "vision"}
                 onStop={chat.stop}
-                onSend={(text) =>
+                onSend={(text, image) =>
                   void (async () => {
-                    const hit = await rag.retrieve(text);
-                    await chat.send(text, hit?.context ?? null, hit?.sources);
+                    const hit = image ? null : await rag.retrieve(text);
+                    await chat.send(text, hit?.context ?? null, hit?.sources, image);
                   })()
                 }
               />
@@ -179,7 +212,9 @@ export default function App(): React.JSX.Element {
               </div>
             </div>
           </>
-        ) : (
+        )}
+
+        {mode === "journal" && (
           <JournalView
             entries={journal.entries}
             active={journal.active}
@@ -193,6 +228,15 @@ export default function App(): React.JSX.Element {
             onReflect={() => setMode("chat")}
           />
         )}
+
+        {mode === "benchmark" && (
+          <BenchmarkView
+            modelReady={modelReady}
+            running={chat.generating}
+            results={benchResults}
+            onRun={() => void runBenchmark()}
+          />
+        )}
       </section>
 
       {trustOpen && (
@@ -204,6 +248,12 @@ export default function App(): React.JSX.Element {
           onClose={() => setTrustOpen(false)}
         />
       )}
+
+      <CommandPalette
+        open={paletteOpen}
+        commands={commands}
+        onClose={() => setPaletteOpen(false)}
+      />
     </div>
   );
 }

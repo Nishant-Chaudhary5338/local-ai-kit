@@ -5,6 +5,7 @@ export type Message = {
   role: Role;
   content: string;
   citations?: string[];
+  image?: string; // data URL, for vision models
 };
 
 export type Conversation = {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LocalAI, modelById } from "../lib";
+import type { ChatCompletionMessageParam } from "@mlc-ai/web-llm";
+import { LocalAI, modelById, type ModelCapability } from "../lib";
 import { listConversations, saveConversation, deleteConversation } from "./db";
 import { newConversation, newMessage, type Conversation, type Message } from "./types";
 
@@ -14,6 +15,14 @@ export type ChatStats = {
   prefillTokPerSec: number;
   decodeTokPerSec: number;
 } | null;
+export type BenchResult = {
+  model: string;
+  ttftMs: number;
+  prefillTokPerSec: number;
+  decodeTokPerSec: number;
+};
+
+const BENCH_PROMPT = "Write a short paragraph about the ocean at dawn.";
 
 const MODEL_IDLE: ModelState = {
   status: "idle",
@@ -23,7 +32,13 @@ const MODEL_IDLE: ModelState = {
 };
 const DEFAULT_CONTEXT = 4096;
 
-type ApiMessage = { role: "system" | "user" | "assistant"; content: string };
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+type ApiMessage = {
+  role: "system" | "user" | "assistant";
+  content: string | ContentPart[];
+};
 
 export function useChat() {
   const clientRef = useRef<LocalAI | null>(null);
@@ -34,6 +49,8 @@ export function useChat() {
   const [stats, setStats] = useState<ChatStats>(null);
   const [contextTokens, setContextTokens] = useState(0);
   const [contextWindow, setContextWindow] = useState(DEFAULT_CONTEXT);
+  const [modelCapability, setModelCapability] = useState<ModelCapability>("chat");
+  const loadedModelRef = useRef<string>("");
 
   useEffect(() => {
     void (async () => {
@@ -60,7 +77,9 @@ export function useChat() {
         setModel((m) => ({ ...m, progress: text, progressPct: progress })),
       );
       clientRef.current = client;
+      loadedModelRef.current = modelId;
       setContextWindow(modelById(modelId)?.contextWindow ?? DEFAULT_CONTEXT);
+      setModelCapability(modelById(modelId)?.capability ?? "chat");
       setContextTokens(0);
       setModel({ status: "ready", progress: "Model ready.", progressPct: 1, error: null });
     } catch (err) {
@@ -88,6 +107,38 @@ export function useChat() {
 
   const stop = useCallback((): void => clientRef.current?.interrupt(), []);
 
+  const benchmark = useCallback(async (): Promise<BenchResult | null> => {
+    const client = clientRef.current;
+    if (!client?.ready || generating) return null;
+    setGenerating(true);
+    try {
+      const start = performance.now();
+      let ttftMs = 0;
+      let result: BenchResult | null = null;
+      const chunks = await client.chat.completions.create({
+        messages: [{ role: "user", content: BENCH_PROMPT }],
+        stream: true,
+        stream_options: { include_usage: true },
+      });
+      for await (const chunk of chunks) {
+        if (!ttftMs && chunk.choices[0]?.delta?.content) {
+          ttftMs = Math.round(performance.now() - start);
+        }
+        if (chunk.usage?.extra) {
+          result = {
+            model: modelById(loadedModelRef.current)?.label ?? loadedModelRef.current,
+            ttftMs,
+            prefillTokPerSec: chunk.usage.extra.prefill_tokens_per_s ?? 0,
+            decodeTokPerSec: chunk.usage.extra.decode_tokens_per_s ?? 0,
+          };
+        }
+      }
+      return result;
+    } finally {
+      setGenerating(false);
+    }
+  }, [generating]);
+
   // Streams a reply into `assistantId`, mutating a local working copy that is
   // pushed to state on every delta and returned for persistence.
   const run = useCallback(
@@ -102,7 +153,9 @@ export function useChat() {
       let working = start;
       try {
         const chunks = await client.chat.completions.create({
-          messages: apiMessages,
+          // Our ApiMessage widens content to arrays for all roles; only user
+          // messages ever carry an image array, so this matches WebLLM at runtime.
+          messages: apiMessages as ChatCompletionMessageParam[],
           stream: true,
           stream_options: { include_usage: true },
         });
@@ -132,14 +185,19 @@ export function useChat() {
   );
 
   const send = useCallback(
-    async (text: string, context?: string | null, citations?: string[]): Promise<void> => {
+    async (
+      text: string,
+      context?: string | null,
+      citations?: string[],
+      image?: string,
+    ): Promise<void> => {
       const client = clientRef.current;
       const trimmed = text.trim();
       if (!client?.ready || !activeId || !trimmed || generating) return;
       const current = conversations.find((c) => c.id === activeId);
       if (!current) return;
 
-      const userMsg = newMessage("user", trimmed);
+      const userMsg: Message = { ...newMessage("user", trimmed), image };
       const assistantMsg: Message = { ...newMessage("assistant", ""), citations };
       const history = [...current.messages, userMsg];
       const working: Conversation = {
@@ -187,6 +245,7 @@ export function useChat() {
     stats,
     contextTokens,
     contextWindow,
+    modelCapability,
     loadModel,
     newChat,
     selectChat,
@@ -194,11 +253,22 @@ export function useChat() {
     send,
     stop,
     regenerate,
+    benchmark,
   };
 }
 
 function toApi(messages: Message[]): ApiMessage[] {
-  return messages.map((m) => ({ role: m.role, content: m.content }));
+  return messages.map((m) =>
+    m.image
+      ? {
+          role: m.role,
+          content: [
+            { type: "text", text: m.content },
+            { type: "image_url", image_url: { url: m.image } },
+          ],
+        }
+      : { role: m.role, content: m.content },
+  );
 }
 
 function findLastUserIndex(messages: Message[]): number {
