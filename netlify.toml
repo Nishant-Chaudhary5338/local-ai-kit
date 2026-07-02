@@ -1,0 +1,13 @@
+[build]
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Single-page app: serve index.html for unknown paths. Existing files (assets,
+# sw.js, manifest) are served directly and take precedence.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -42,10 +42,11 @@ export default function App(): React.JSX.Element {
   const journal = useJournal(rag.indexSource, rag.removeSource, rag.ready);
   const { theme, toggle: toggleTheme } = useTheme();
   const { settings, update: updateSettings } = useSettings();
+  const { configure: configureChat } = chat;
 
   useEffect(() => {
-    chat.configure(settings);
-  }, [settings, chat.configure]);
+    configureChat(settings);
+  }, [settings, configureChat]);
 
   const reflect = (prompt: string): void => {
     setMode("chat");
