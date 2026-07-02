@@ -51,6 +51,14 @@ export function useChat() {
   const [contextWindow, setContextWindow] = useState(DEFAULT_CONTEXT);
   const [modelCapability, setModelCapability] = useState<ModelCapability>("chat");
   const loadedModelRef = useRef<string>("");
+  const paramsRef = useRef({ systemPrompt: "", temperature: 0.7 });
+
+  const configure = useCallback(
+    (params: { systemPrompt: string; temperature: number }): void => {
+      paramsRef.current = params;
+    },
+    [],
+  );
 
   useEffect(() => {
     void (async () => {
@@ -151,11 +159,16 @@ export function useChat() {
       setGenerating(true);
       setStats(null);
       let working = start;
+      const { systemPrompt, temperature } = paramsRef.current;
+      const withPersona = systemPrompt.trim()
+        ? [{ role: "system" as const, content: systemPrompt }, ...apiMessages]
+        : apiMessages;
       try {
         const chunks = await client.chat.completions.create({
           // Our ApiMessage widens content to arrays for all roles; only user
           // messages ever carry an image array, so this matches WebLLM at runtime.
-          messages: apiMessages as ChatCompletionMessageParam[],
+          messages: withPersona as ChatCompletionMessageParam[],
+          temperature,
           stream: true,
           stream_options: { include_usage: true },
         });
@@ -246,6 +259,7 @@ export function useChat() {
     contextTokens,
     contextWindow,
     modelCapability,
+    configure,
     loadModel,
     newChat,
     selectChat,

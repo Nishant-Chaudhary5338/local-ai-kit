@@ -19,6 +19,8 @@ import { useJournal } from "./journal/useJournal";
 import { JournalView } from "./journal/JournalView";
 import { BenchmarkView } from "./chat/BenchmarkView";
 import { CommandPalette, type Command } from "./ui/CommandPalette";
+import { SettingsPopover } from "./chat/SettingsPopover";
+import { useSettings } from "./chat/useSettings";
 import { useTheme } from "./theme/useTheme";
 import type { BenchResult } from "./chat/useChat";
 
@@ -33,11 +35,25 @@ export default function App(): React.JSX.Element {
   const [trustOpen, setTrustOpen] = useState(true);
   const [mode, setMode] = useState<Mode>("chat");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [benchResults, setBenchResults] = useState<BenchResult[]>([]);
   const chat = useChat();
   const rag = useRag();
   const journal = useJournal(rag.indexSource, rag.removeSource, rag.ready);
   const { theme, toggle: toggleTheme } = useTheme();
+  const { settings, update: updateSettings } = useSettings();
+
+  useEffect(() => {
+    chat.configure(settings);
+  }, [settings, chat.configure]);
+
+  const reflect = (prompt: string): void => {
+    setMode("chat");
+    void (async () => {
+      const hit = await rag.retrieve(prompt);
+      await chat.send(prompt, hit?.context ?? null, hit?.sources);
+    })();
+  };
 
   useEffect(() => {
     void detectCapability().then((c) => {
@@ -86,6 +102,7 @@ export default function App(): React.JSX.Element {
       label: trustOpen ? "Hide trust panel" : "Show trust panel",
       run: () => setTrustOpen((o) => !o),
     },
+    { id: "settings", label: "Open settings", run: () => setSettingsOpen(true) },
   ];
 
   return (
@@ -131,6 +148,13 @@ export default function App(): React.JSX.Element {
             </button>
           ))}
           <div className="ml-auto flex items-center gap-1.5 pb-1.5">
+            <button
+              aria-label="Settings"
+              onClick={() => setSettingsOpen(true)}
+              className="rounded-md border border-hairline-strong px-2 py-1 leading-none transition hover:bg-surface-hover"
+            >
+              ⚙️
+            </button>
             <button
               aria-label="Toggle theme"
               onClick={toggleTheme}
@@ -225,7 +249,7 @@ export default function App(): React.JSX.Element {
             onSelect={journal.select}
             onUpdate={journal.update}
             onRemove={(id) => void journal.remove(id)}
-            onReflect={() => setMode("chat")}
+            onReflect={reflect}
           />
         )}
 
@@ -254,6 +278,14 @@ export default function App(): React.JSX.Element {
         commands={commands}
         onClose={() => setPaletteOpen(false)}
       />
+
+      {settingsOpen && (
+        <SettingsPopover
+          settings={settings}
+          onUpdate={updateSettings}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   );
 }

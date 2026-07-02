@@ -130,6 +130,26 @@ test("command palette opens with the keyboard and closes on Escape", async ({
   await expect(page.getByTestId("journal-view")).toBeVisible();
 });
 
+test("opens settings and edits the system prompt", async ({ page }) => {
+  await page.getByRole("button", { name: "Settings" }).click();
+  const prompt = page.getByPlaceholder(/concise, friendly assistant/);
+  await expect(prompt).toBeVisible();
+  await prompt.fill("You are a pirate.");
+  await expect(prompt).toHaveValue("You are a pirate.");
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByPlaceholder(/concise, friendly assistant/)).toHaveValue(
+    "You are a pirate.",
+  );
+});
+
+test("shows a Reflect action once journal entries exist", async ({ page }) => {
+  await page.getByRole("button", { name: "journal", exact: true }).click();
+  await page.getByRole("button", { name: "+ New entry" }).click();
+  await expect(page.getByRole("button", { name: /Reflect/ })).toBeVisible();
+});
+
 test("loads without console errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (msg) => {
