@@ -71,6 +71,7 @@ export function CommandPalette({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Type a command…"
+          aria-label="Search commands"
           className="w-full border-b border-hairline bg-transparent px-4 py-3 outline-none placeholder:text-faint"
         />
         <ul className="max-h-72 overflow-y-auto p-1.5">

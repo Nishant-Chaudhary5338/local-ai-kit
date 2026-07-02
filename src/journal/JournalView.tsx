@@ -73,6 +73,7 @@ export function JournalView({
             value={active.title}
             onChange={(e) => onUpdate(active.id, { title: e.target.value })}
             placeholder="Title"
+            aria-label="Entry title"
             className="border-b border-hairline bg-transparent py-1.5 text-[1.3rem] font-bold tracking-tight outline-none focus:border-accent"
           />
           {preview ? (
