@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-// The UI is built on the system color keywords Canvas/CanvasText, which follow
-// `color-scheme`. Setting it on the root element flips the whole app between
-// light and dark with no per-property theming. Defaults to the OS preference,
-// then persists the user's choice.
+// Theme is driven by <html data-theme>, which switches the CSS token layer and
+// Tailwind's `dark:` variant. `color-scheme` is set alongside it so native
+// controls and scrollbars match. Defaults to the OS preference, then persists.
 
 export type Theme = "light" | "dark";
 
@@ -21,7 +20,9 @@ export function useTheme(): { theme: Theme; toggle: () => void } {
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
   useEffect(() => {
-    document.documentElement.style.colorScheme = theme;
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 

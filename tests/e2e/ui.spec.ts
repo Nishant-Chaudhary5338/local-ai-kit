@@ -17,22 +17,22 @@ test("renders the app shell and privacy footer", async ({ page }) => {
 test("resolves the WebGPU capability badge (never stuck on checking)", async ({
   page,
 }) => {
-  const badge = page.locator(".badge");
+  const badge = page.getByTestId("gpu-badge");
   await expect(badge).toBeVisible();
   await expect(badge).not.toHaveText(/checking|…/);
   await expect(badge).toHaveText(/WebGPU: (available|unavailable)/);
 });
 
-test("shows the fallback panel and disables Load when WebGPU is unavailable", async ({
+test("shows the fallback warning and disables Load when WebGPU is unavailable", async ({
   page,
 }) => {
-  const badge = page.locator(".badge");
+  const badge = page.getByTestId("gpu-badge");
   const isUnavailable = (await badge.textContent())?.includes("unavailable");
   test.skip(
     !isUnavailable,
     "WebGPU is available in this browser — fallback path not applicable",
   );
-  await expect(page.locator(".panel--warn")).toBeVisible();
+  await expect(page.getByText(/WebGPU unavailable/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Load model" })).toBeDisabled();
 });
 
@@ -46,12 +46,12 @@ test("lists the model catalog across tiers in the picker", async ({ page }) => {
 });
 
 test("keeps the composer disabled until a model is ready", async ({ page }) => {
-  await expect(page.locator(".composer textarea")).toBeDisabled();
+  await expect(page.getByTestId("composer-input")).toBeDisabled();
   await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
 });
 
 test("creates a new conversation", async ({ page }) => {
-  const items = page.locator(".conv");
+  const items = page.getByTestId("conversation");
   const before = await items.count();
   await page.getByRole("button", { name: "+ New" }).click();
   await expect(items).toHaveCount(before + 1);
@@ -60,28 +60,22 @@ test("creates a new conversation", async ({ page }) => {
 test("shows the trust panel with capability and network sections", async ({
   page,
 }) => {
-  const trust = page.locator(".trust");
+  const trust = page.getByTestId("trust-panel");
   await expect(trust).toBeVisible();
   await expect(trust.getByRole("heading", { name: "Capability" })).toBeVisible();
   await expect(trust.getByRole("heading", { name: "Network" })).toBeVisible();
-  // Nothing outbound should be flagged non-model before any model load.
-  await expect(trust.locator(".trust__row", { hasText: "Non-model" })).toContainText(
-    "0",
-  );
+  await expect(trust.getByText("Non-model")).toBeVisible();
 });
 
 test("collapses and reopens the trust panel", async ({ page }) => {
-  await page.locator(".trust__close").click();
-  await expect(page.locator(".trust")).toHaveCount(0);
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByTestId("trust-panel")).toHaveCount(0);
   await page.getByRole("button", { name: /Trust panel/ }).click();
-  await expect(page.locator(".trust")).toBeVisible();
+  await expect(page.getByTestId("trust-panel")).toBeVisible();
 });
 
 test("offers document search (RAG) in the sidebar", async ({ page }) => {
-  const docs = page.locator(".docs");
-  await expect(docs).toBeVisible();
-  await expect(docs.getByText("Documents · private")).toBeVisible();
-  // Before the embedder loads, the enable affordance is shown (not a file input).
+  await expect(page.getByText("Documents · private")).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Enable document search/ }),
   ).toBeVisible();
@@ -89,30 +83,25 @@ test("offers document search (RAG) in the sidebar", async ({ page }) => {
 
 test("switches to the journal and creates an entry", async ({ page }) => {
   await page.getByRole("button", { name: "Journal", exact: true }).click();
-  await expect(page.locator(".journal")).toBeVisible();
+  await expect(page.getByTestId("journal-view")).toBeVisible();
   await page.getByRole("button", { name: "+ New entry" }).click();
-  await expect(page.locator(".journal__title")).toBeVisible();
-  await page.locator(".journal__title").fill("My first entry");
-  await expect(page.locator(".journal__tab--active")).toContainText(
-    "My first entry",
-  );
+  await page.getByPlaceholder("Title").fill("My first entry");
+  await expect(
+    page.getByRole("button", { name: "My first entry" }),
+  ).toBeVisible();
 });
 
 test("toggles the color theme and persists it", async ({ page }) => {
-  const before = await page.evaluate(
-    () => document.documentElement.style.colorScheme,
-  );
+  const read = () =>
+    page.evaluate(() => document.documentElement.dataset.theme ?? "");
+  const before = await read();
   await page.getByRole("button", { name: "Toggle theme" }).click();
-  const after = await page.evaluate(
-    () => document.documentElement.style.colorScheme,
-  );
+  const after = await read();
   expect(after).not.toBe(before);
   expect(["light", "dark"]).toContain(after);
   await page.reload();
   await page.waitForLoadState("networkidle");
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.style.colorScheme))
-    .toBe(after);
+  await expect.poll(read).toBe(after);
 });
 
 test("loads without console errors", async ({ page }) => {

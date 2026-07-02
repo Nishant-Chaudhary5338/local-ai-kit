@@ -1,3 +1,5 @@
+import { cn } from "../lib";
+import { btn } from "../ui/styles";
 import type { JournalEntry } from "./types";
 
 type Props = {
@@ -26,42 +28,47 @@ export function JournalView({
   onReflect,
 }: Props): React.JSX.Element {
   return (
-    <div className="journal">
-      <div className="journal__bar">
-        <button className="btn-new" onClick={onCreate}>
+    <div data-testid="journal-view" className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center gap-2 border-b border-hairline px-4 py-2.5">
+        <button className={cn(btn, "px-2.5 py-1.5 text-[0.82rem]")} onClick={onCreate}>
           + New entry
         </button>
-        <div className="journal__tabs">
+        <div className="flex flex-1 gap-1.5 overflow-x-auto">
           {entries.map((e) => (
             <button
               key={e.id}
-              className={`journal__tab ${e.id === activeId ? "journal__tab--active" : ""}`}
               onClick={() => onSelect(e.id)}
+              className={cn(
+                "whitespace-nowrap rounded-full border px-2.5 py-1 text-sm transition",
+                e.id === activeId
+                  ? "border-transparent bg-accent-soft text-fg"
+                  : "border-hairline bg-surface-2 text-muted hover:text-fg",
+              )}
             >
               {e.title || "Untitled"}
             </button>
           ))}
         </div>
-        <button className="btn-new" onClick={onReflect}>
+        <button className={cn(btn, "px-2.5 py-1.5 text-[0.82rem]")} onClick={onReflect}>
           Reflect ›
         </button>
       </div>
 
       {active ? (
-        <div className="journal__editor">
+        <div className="mx-auto flex min-h-0 w-full max-w-[46rem] flex-1 flex-col gap-2.5 p-6">
           <input
-            className="journal__title"
             value={active.title}
             onChange={(e) => onUpdate(active.id, { title: e.target.value })}
             placeholder="Title"
+            className="border-b border-hairline bg-transparent py-1.5 text-[1.3rem] font-bold tracking-tight outline-none focus:border-accent"
           />
           <textarea
-            className="journal__text"
             value={active.text}
             onChange={(e) => onUpdate(active.id, { text: e.target.value })}
             placeholder="Write freely — it stays on your device and is indexed for reflection."
+            className="min-h-0 flex-1 resize-none bg-transparent py-1.5 text-base leading-relaxed outline-none placeholder:text-faint"
           />
-          <div className="journal__foot">
+          <div className="flex items-center justify-between text-xs text-faint">
             <span>
               {embedderReady
                 ? indexing
@@ -70,8 +77,7 @@ export function JournalView({
                 : "Autosaved · enable document search to index for reflection"}
             </span>
             <button
-              className="conv__del"
-              aria-label="Delete entry"
+              className="text-faint transition hover:text-danger"
               onClick={() => onRemove(active.id)}
             >
               Delete
@@ -79,7 +85,7 @@ export function JournalView({
           </div>
         </div>
       ) : (
-        <div className="journal__empty">
+        <div className="grid flex-1 place-items-center text-muted">
           <p>No entries yet. Start writing — nothing leaves your device.</p>
         </div>
       )}

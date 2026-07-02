@@ -4,6 +4,7 @@ import {
   recommendedTier,
   defaultModelId,
   resolveModelId,
+  cn,
   type Capability,
 } from "./lib";
 import { useChat } from "./chat/useChat";
@@ -17,9 +18,11 @@ import { DocsPanel } from "./rag/DocsPanel";
 import { useJournal } from "./journal/useJournal";
 import { JournalView } from "./journal/JournalView";
 import { useTheme } from "./theme/useTheme";
-import "./App.css";
 
 type Mode = "chat" | "journal";
+
+const TAB_BASE =
+  "cursor-pointer border-b-2 px-3.5 pb-2.5 pt-2 transition";
 
 export default function App(): React.JSX.Element {
   const [cap, setCap] = useState<Capability | null>(null);
@@ -46,7 +49,12 @@ export default function App(): React.JSX.Element {
   const modelReady = chat.model.status === "ready";
 
   return (
-    <div className={`layout ${trustOpen ? "layout--trust" : ""}`}>
+    <div
+      className={cn(
+        "grid h-dvh",
+        trustOpen ? "grid-cols-[272px_1fr_336px]" : "grid-cols-[272px_1fr]",
+      )}
+    >
       <Sidebar
         conversations={chat.conversations}
         activeId={chat.activeId}
@@ -65,30 +73,43 @@ export default function App(): React.JSX.Element {
         />
       </Sidebar>
 
-      <section className="main">
-        <div className="tabs">
+      <section className="flex min-h-0 flex-col">
+        <div className="flex items-center gap-1 border-b border-hairline bg-surface/60 px-4 pt-1.5 backdrop-blur">
           <button
-            className={`tab ${mode === "chat" ? "tab--active" : ""}`}
+            className={cn(
+              TAB_BASE,
+              mode === "chat"
+                ? "border-accent font-semibold text-fg"
+                : "border-transparent text-muted hover:text-fg",
+            )}
             onClick={() => setMode("chat")}
           >
             Chat
           </button>
           <button
-            className={`tab ${mode === "journal" ? "tab--active" : ""}`}
+            className={cn(
+              TAB_BASE,
+              mode === "journal"
+                ? "border-accent font-semibold text-fg"
+                : "border-transparent text-muted hover:text-fg",
+            )}
             onClick={() => setMode("journal")}
           >
             Journal
           </button>
-          <div className="tabs__right">
+          <div className="ml-auto flex items-center gap-1.5 pb-1.5">
             <button
-              className="icon-btn"
               aria-label="Toggle theme"
               onClick={toggleTheme}
+              className="rounded-md border border-hairline-strong px-2 py-1 leading-none transition hover:bg-surface-hover"
             >
               {theme === "dark" ? "☀️" : "🌙"}
             </button>
             {!trustOpen && (
-              <button className="trust-open" onClick={() => setTrustOpen(true)}>
+              <button
+                onClick={() => setTrustOpen(true)}
+                className="rounded-md border border-hairline-strong px-2.5 py-1 text-[0.78rem] transition hover:bg-surface-hover"
+              >
                 Trust panel ‹
               </button>
             )}
@@ -113,9 +134,9 @@ export default function App(): React.JSX.Element {
               modelReady={modelReady}
             />
 
-            <div className="composer-wrap">
+            <div className="border-t border-hairline bg-surface px-4 pb-4 pt-3.5">
               {rag.ready && rag.sources.length > 0 && (
-                <p className="rag-hint">
+                <p className="mb-2 text-[0.78rem] font-medium text-accent-strong">
                   🔎 Answering from {rag.sources.length} private source
                   {rag.sources.length > 1 ? "s" : ""} · cited, on-device
                 </p>
@@ -131,7 +152,7 @@ export default function App(): React.JSX.Element {
                 }
               />
               {chat.stats && (
-                <p className="stats">
+                <p className="mt-2 text-[0.78rem] tabular-nums text-faint">
                   prefill {chat.stats.prefillTokPerSec.toFixed(1)} tok/s · decode{" "}
                   {chat.stats.decodeTokPerSec.toFixed(1)} tok/s
                 </p>

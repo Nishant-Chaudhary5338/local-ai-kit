@@ -1,5 +1,6 @@
 // Public surface of the future `local-ai-kit` package. The app consumes only
 // from here, so extraction later is a move, not a rewrite.
+export { cn } from "./cn";
 export { LocalAI, type LoadProgress } from "./localAI";
 export {
   detectCapability,

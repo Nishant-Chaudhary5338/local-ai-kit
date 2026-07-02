@@ -1,4 +1,6 @@
 import { useRef } from "react";
+import { cn } from "../lib";
+import { btn, sectionLabel } from "../ui/styles";
 import type { DocSource, EmbedderStatus } from "./useRag";
 
 type Props = {
@@ -23,12 +25,12 @@ export function DocsPanel({
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="docs">
-      <div className="docs__head">Documents · private</div>
+    <div className="flex flex-col gap-2 border-t border-hairline pt-2.5">
+      <span className={sectionLabel}>Documents · private</span>
 
       {status !== "ready" ? (
         <button
-          className="docs__enable"
+          className={cn(btn, "border-dashed text-left text-[0.82rem]")}
           onClick={onEnable}
           disabled={status === "loading"}
         >
@@ -48,7 +50,7 @@ export function DocsPanel({
             }}
           />
           <button
-            className="docs__enable"
+            className={cn(btn, "border-dashed text-left text-[0.82rem]")}
             onClick={() => fileRef.current?.click()}
             disabled={indexing}
           >
@@ -58,20 +60,23 @@ export function DocsPanel({
       )}
 
       {status === "loading" && progress && (
-        <p className="progress">{progress}</p>
+        <p className="text-[0.82rem] text-muted">{progress}</p>
       )}
       {status === "error" && (
-        <p className="progress">Embedder failed to load.</p>
+        <p className="text-[0.82rem] text-danger">Embedder failed to load.</p>
       )}
 
-      <ul className="docs__list">
+      <ul className="flex flex-col gap-0.5">
         {sources.map((s) => (
-          <li key={s.source}>
-            <span className="docs__name">{s.source}</span>
-            <span className="docs__count">{s.count}</span>
+          <li
+            key={s.source}
+            className="flex items-center gap-1.5 rounded-md bg-surface-2 px-1.5 py-1 text-sm"
+          >
+            <span className="flex-1 truncate">{s.source}</span>
+            <span className="text-xs tabular-nums text-faint">{s.count}</span>
             <button
-              className="conv__del"
               aria-label={`Remove ${s.source}`}
+              className="text-faint transition hover:text-danger"
               onClick={() => onRemoveDoc(s.source)}
             >
               ×

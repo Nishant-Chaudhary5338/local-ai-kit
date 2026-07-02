@@ -25,21 +25,19 @@ test("streams a real reply and reports tokens/sec on a WebGPU browser", async ({
   await page.selectOption("select", { label: /Llama 3.2 1B/ });
   await page.getByRole("button", { name: "Load model" }).click();
 
-  await expect(page.locator(".progress")).toContainText(/ready/i, {
-    timeout: 240_000,
-  });
+  await expect(page.getByText("Model ready.")).toBeVisible({ timeout: 240_000 });
 
   await page
-    .locator(".composer textarea")
+    .getByTestId("composer-input")
     .fill("Say hello in exactly three words.");
   await page.getByRole("button", { name: "Send" }).click();
 
-  await expect(page.locator(".msg--assistant .msg__body").last()).not.toBeEmpty({
+  await expect(page.getByTestId("msg-assistant").last()).not.toBeEmpty({
     timeout: 60_000,
   });
 
-  const stats = page.locator(".stats");
-  await expect(stats).toContainText(/decode .* tok\/s/, { timeout: 60_000 });
+  const stats = page.getByText(/decode .* tok\/s/);
+  await expect(stats).toBeVisible({ timeout: 60_000 });
   const statsText = (await stats.textContent()) ?? "";
   const decode = Number(statsText.match(/decode ([\d.]+) tok\/s/)?.[1] ?? "0");
   expect(decode).toBeGreaterThan(0);
