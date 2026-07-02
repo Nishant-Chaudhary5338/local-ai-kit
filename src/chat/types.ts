@@ -4,6 +4,7 @@ export type Message = {
   id: string;
   role: Role;
   content: string;
+  citations?: string[];
 };
 
 export type Conversation = {

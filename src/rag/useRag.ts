@@ -88,13 +88,17 @@ export function useRag() {
   }, []);
 
   const retrieve = useCallback(
-    async (queryText: string): Promise<string | null> => {
+    async (
+      queryText: string,
+    ): Promise<{ context: string; sources: string[] } | null> => {
       const embedder = embedderRef.current;
       if (!embedder?.ready || sources.length === 0) return null;
       const [queryVec] = await embedder.embed([queryText]);
       const hits = search(queryVec, await allChunks(), TOP_K);
       if (hits.length === 0) return null;
-      return formatContext(hits.map((h) => h.chunk));
+      const chunks = hits.map((h) => h.chunk);
+      const cited = [...new Set(chunks.map((c) => displaySource(c.source)))];
+      return { context: formatContext(chunks), sources: cited };
     },
     [sources.length],
   );
@@ -112,6 +116,10 @@ export function useRag() {
     removeSource,
     retrieve,
   };
+}
+
+function displaySource(source: string): string {
+  return source.startsWith("journal/") ? "Journal entry" : source;
 }
 
 function formatContext(chunks: Chunk[]): string {

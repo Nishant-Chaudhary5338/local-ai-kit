@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { cn } from "../lib";
-import { btnPrimary } from "../ui/styles";
+import { btn, btnPrimary } from "../ui/styles";
 
 type Props = {
   disabled: boolean;
   generating: boolean;
   onSend: (text: string) => void;
+  onStop: () => void;
 };
 
 export function Composer({
   disabled,
   generating,
   onSend,
+  onStop,
 }: Props): React.JSX.Element {
   const [text, setText] = useState("");
 
@@ -38,13 +40,19 @@ export function Composer({
         disabled={disabled}
         className="flex-1 resize-none border-none bg-transparent px-2.5 py-2 outline-none placeholder:text-faint"
       />
-      <button
-        className={cn(btnPrimary, "self-end px-5")}
-        onClick={submit}
-        disabled={disabled || !text.trim()}
-      >
-        {generating ? "…" : "Send"}
-      </button>
+      {generating ? (
+        <button className={cn(btn, "self-end px-5")} onClick={onStop}>
+          Stop
+        </button>
+      ) : (
+        <button
+          className={cn(btnPrimary, "self-end px-5")}
+          onClick={submit}
+          disabled={disabled || !text.trim()}
+        >
+          Send
+        </button>
+      )}
     </div>
   );
 }

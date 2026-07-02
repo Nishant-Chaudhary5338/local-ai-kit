@@ -5,6 +5,8 @@ import type { Tier } from "./capability";
 // only pulled in on load(). `fallbackId` is the q4f32 variant used when the
 // adapter lacks shader-f16. `loadLiveCatalog()` reconciles against the live
 // config at runtime for anyone who wants the full, current list.
+export type ModelCapability = "chat" | "vision" | "reasoning";
+
 export type CatalogModel = {
   id: string;
   label: string;
@@ -12,17 +14,25 @@ export type CatalogModel = {
   vramMb: number;
   tier: Tier;
   fallbackId: string | null;
+  contextWindow: number;
+  capability: ModelCapability;
 };
 
 export const CATALOG: readonly CatalogModel[] = [
-  { id: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", label: "Qwen2.5 0.5B", params: "0.5B", vramMb: 945, tier: 0, fallbackId: null },
-  { id: "Llama-3.2-1B-Instruct-q4f16_1-MLC", label: "Llama 3.2 1B", params: "1B", vramMb: 879, tier: 0, fallbackId: "Llama-3.2-1B-Instruct-q4f32_1-MLC" },
-  { id: "Llama-3.2-3B-Instruct-q4f16_1-MLC", label: "Llama 3.2 3B", params: "3B", vramMb: 2264, tier: 1, fallbackId: null },
-  { id: "Qwen2.5-3B-Instruct-q4f16_1-MLC", label: "Qwen2.5 3B", params: "3B", vramMb: 2505, tier: 1, fallbackId: null },
-  { id: "Phi-3.5-mini-instruct-q4f16_1-MLC-1k", label: "Phi-3.5 mini", params: "3.8B", vramMb: 2520, tier: 1, fallbackId: null },
-  { id: "Llama-3.1-8B-Instruct-q4f16_1-MLC", label: "Llama 3.1 8B", params: "8B", vramMb: 5001, tier: 2, fallbackId: "Llama-3.1-8B-Instruct-q4f32_1-MLC" },
-  { id: "Qwen2.5-7B-Instruct-q4f16_1-MLC", label: "Qwen2.5 7B", params: "7B", vramMb: 5107, tier: 2, fallbackId: null },
+  { id: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", label: "Qwen2.5 0.5B", params: "0.5B", vramMb: 945, tier: 0, fallbackId: null, contextWindow: 4096, capability: "chat" },
+  { id: "Llama-3.2-1B-Instruct-q4f16_1-MLC", label: "Llama 3.2 1B", params: "1B", vramMb: 879, tier: 0, fallbackId: "Llama-3.2-1B-Instruct-q4f32_1-MLC", contextWindow: 4096, capability: "chat" },
+  { id: "Llama-3.2-3B-Instruct-q4f16_1-MLC", label: "Llama 3.2 3B", params: "3B", vramMb: 2264, tier: 1, fallbackId: null, contextWindow: 4096, capability: "chat" },
+  { id: "Qwen2.5-3B-Instruct-q4f16_1-MLC", label: "Qwen2.5 3B", params: "3B", vramMb: 2505, tier: 1, fallbackId: null, contextWindow: 4096, capability: "chat" },
+  { id: "Phi-3.5-mini-instruct-q4f16_1-MLC-1k", label: "Phi-3.5 mini", params: "3.8B", vramMb: 2520, tier: 1, fallbackId: null, contextWindow: 1024, capability: "chat" },
+  { id: "Llama-3.1-8B-Instruct-q4f16_1-MLC", label: "Llama 3.1 8B", params: "8B", vramMb: 5001, tier: 2, fallbackId: "Llama-3.1-8B-Instruct-q4f32_1-MLC", contextWindow: 4096, capability: "chat" },
+  { id: "Qwen2.5-7B-Instruct-q4f16_1-MLC", label: "Qwen2.5 7B", params: "7B", vramMb: 5107, tier: 2, fallbackId: null, contextWindow: 4096, capability: "chat" },
+  { id: "Phi-3.5-vision-instruct-q4f16_1-MLC", label: "Phi-3.5 vision", params: "4.2B", vramMb: 3952, tier: 1, fallbackId: null, contextWindow: 4096, capability: "vision" },
+  { id: "DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC", label: "DeepSeek-R1 8B", params: "8B", vramMb: 5001, tier: 2, fallbackId: null, contextWindow: 4096, capability: "reasoning" },
 ];
+
+export function modelById(id: string): CatalogModel | undefined {
+  return CATALOG.find((m) => m.id === id);
+}
 
 // Verified fast/quality balance on an M1 base: 1B ~42 tok/s, 3B usable.
 const TIER_DEFAULTS: Record<Tier, string> = {

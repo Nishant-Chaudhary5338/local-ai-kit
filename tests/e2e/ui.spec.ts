@@ -38,7 +38,7 @@ test("shows the fallback warning and disables Load when WebGPU is unavailable", 
 
 test("lists the model catalog across tiers in the picker", async ({ page }) => {
   const options = page.locator("select option");
-  await expect(options).toHaveCount(7);
+  await expect(options).toHaveCount(9);
   await expect(options.filter({ hasText: "Llama 3.2 3B" })).toHaveCount(1);
   await expect(options.filter({ hasText: "Llama 3.1 8B" })).toContainText(
     "large",
@@ -102,6 +102,13 @@ test("toggles the color theme and persists it", async ({ page }) => {
   await page.reload();
   await page.waitForLoadState("networkidle");
   await expect.poll(read).toBe(after);
+});
+
+test("exposes data ownership controls in the trust panel", async ({ page }) => {
+  const trust = page.getByTestId("trust-panel");
+  await expect(trust.getByRole("heading", { name: "Your data" })).toBeVisible();
+  await expect(trust.getByRole("button", { name: "Export" })).toBeVisible();
+  await expect(trust.getByRole("button", { name: "Wipe all" })).toBeVisible();
 });
 
 test("loads without console errors", async ({ page }) => {

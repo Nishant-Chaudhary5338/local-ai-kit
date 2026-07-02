@@ -1,6 +1,7 @@
 import { cn } from "../lib";
 import { sectionLabel } from "../ui/styles";
 import { useNetMonitor } from "./useNetMonitor";
+import { DataControls } from "../data/DataControls";
 import type { Capability } from "../lib";
 import type { ChatStats, ModelStatus } from "../chat/useChat";
 
@@ -115,6 +116,8 @@ export function TrustPanel({
             ))}
         </ul>
       </Section>
+
+      <DataControls />
     </aside>
   );
 }

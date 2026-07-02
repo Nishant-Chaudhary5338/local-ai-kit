@@ -47,6 +47,7 @@ export default function App(): React.JSX.Element {
   }, [cap]);
 
   const modelReady = chat.model.status === "ready";
+  const hasMessages = (chat.active?.messages.length ?? 0) > 0;
 
   return (
     <div
@@ -135,28 +136,47 @@ export default function App(): React.JSX.Element {
             />
 
             <div className="border-t border-hairline bg-surface px-4 pb-4 pt-3.5">
-              {rag.ready && rag.sources.length > 0 && (
-                <p className="mb-2 text-[0.78rem] font-medium text-accent-strong">
-                  🔎 Answering from {rag.sources.length} private source
-                  {rag.sources.length > 1 ? "s" : ""} · cited, on-device
-                </p>
-              )}
+              <div className="mb-2 flex min-h-[1.1rem] items-center justify-between gap-2">
+                {rag.ready && rag.sources.length > 0 ? (
+                  <p className="text-[0.78rem] font-medium text-accent-strong">
+                    🔎 Answering from {rag.sources.length} private source
+                    {rag.sources.length > 1 ? "s" : ""} · cited, on-device
+                  </p>
+                ) : (
+                  <span />
+                )}
+                {hasMessages && !chat.generating && (
+                  <button
+                    onClick={() => void chat.regenerate()}
+                    className="text-[0.78rem] text-muted transition hover:text-fg"
+                  >
+                    ↻ Regenerate
+                  </button>
+                )}
+              </div>
               <Composer
                 disabled={!modelReady || chat.generating}
                 generating={chat.generating}
+                onStop={chat.stop}
                 onSend={(text) =>
                   void (async () => {
-                    const context = await rag.retrieve(text);
-                    await chat.send(text, context);
+                    const hit = await rag.retrieve(text);
+                    await chat.send(text, hit?.context ?? null, hit?.sources);
                   })()
                 }
               />
-              {chat.stats && (
-                <p className="mt-2 text-[0.78rem] tabular-nums text-faint">
-                  prefill {chat.stats.prefillTokPerSec.toFixed(1)} tok/s · decode{" "}
-                  {chat.stats.decodeTokPerSec.toFixed(1)} tok/s
-                </p>
-              )}
+              <div className="mt-2 flex items-center justify-between text-[0.78rem] tabular-nums text-faint">
+                <span>
+                  {chat.stats
+                    ? `prefill ${chat.stats.prefillTokPerSec.toFixed(1)} · decode ${chat.stats.decodeTokPerSec.toFixed(1)} tok/s`
+                    : ""}
+                </span>
+                {modelReady && chat.contextTokens > 0 && (
+                  <span>
+                    context {chat.contextTokens}/{chat.contextWindow}
+                  </span>
+                )}
+              </div>
             </div>
           </>
         ) : (

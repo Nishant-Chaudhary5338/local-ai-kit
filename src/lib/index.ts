@@ -13,6 +13,8 @@ export {
   defaultModelId,
   resolveModelId,
   loadLiveCatalog,
+  modelById,
   EMBED_MODEL_ID,
   type CatalogModel,
+  type ModelCapability,
 } from "./catalog";

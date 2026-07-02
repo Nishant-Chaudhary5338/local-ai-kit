@@ -28,6 +28,11 @@ export class LocalAI {
     return this.engine !== null;
   }
 
+  // Aborts the current streamed generation, if any.
+  interrupt(): void {
+    this.engine?.interruptGenerate();
+  }
+
   // Delegates to the WebLLM engine, which exposes the OpenAI-compatible surface
   // (chat.completions.create with streaming + JSON mode).
   get chat(): MLCEngineInterface["chat"] {
